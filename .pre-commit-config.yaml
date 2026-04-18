@@ -1,0 +1,19 @@
+repos:
+  - repo: local
+    hooks:
+      - id: freeze-verify
+        name: Verify frozen-path hashes
+        entry: python -m aae.ops.freeze_experiment verify
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: channel-lint
+        name: Forbid direct HTTP calls outside /aae/channels/
+        entry: python scripts/lint_channels.py
+        language: system
+        pass_filenames: false
+        always_run: true
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.0
+    hooks:
+      - id: ruff
