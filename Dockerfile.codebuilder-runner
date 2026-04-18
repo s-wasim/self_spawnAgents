@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+
+WORKDIR /opt/aae
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    docker.io ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml ./
+COPY aae ./aae
+
+RUN pip install --no-cache-dir -e .
+
+CMD ["python", "-m", "aae.codebuilder.agent"]

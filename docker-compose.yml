@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+  aae-postgres:
+    image: postgres:18-alpine
+    container_name: aae-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aae
+      POSTGRES_PASSWORD: aae
+      POSTGRES_DB: aae
+    command: ["postgres", "-c", "shared_preload_libraries=vector"]
+    volumes:
+      - aae_pg:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aae -d aae"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  aae-redis:
+    image: redis:7-alpine
+    container_name: aae-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  aae-mother:
+    build:
+      context: .
+      dockerfile: Dockerfile.mother
+    container_name: aae-mother
+    restart: unless-stopped
+    depends_on:
+      aae-postgres:
+        condition: service_healthy
+      aae-redis:
+        condition: service_healthy
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  aae-codebuilder-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.codebuilder-runner
+    container_name: aae-codebuilder-runner
+    restart: unless-stopped
+    depends_on:
+      aae-postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  aae_pg:
